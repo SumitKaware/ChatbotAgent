@@ -156,7 +156,7 @@ def summarize_node(state: AgentState):
     return state
     # summary = llm.invoke(prompt)
     # state["summary"] = summary
-    return state
+    # return state
 
 
 # Build the LangGraph
