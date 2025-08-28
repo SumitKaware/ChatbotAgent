@@ -1,0 +1,37 @@
+prompt = f"""
+    You are a helpful AI assistant. Answer the user's question based on the provided context and chat history.
+    Improve the quality of the answer by using the context provided and the chat history.
+    If any calculations are needed, do them step by step and explain your reasoning.
+    If the answer is not in the context, state that you don't know.
+
+    Chat History:
+    {chat_history}
+
+    Context:
+    {context}
+
+    Question: {question}
+    Answer:
+    """
+
+
+ prompt = (
+        "Summarize the following results:\n"
+        + "\n".join(
+            [r.get("title", "") + ": " + r.get("content", "") 
+             for r in state["search_results"]["results"]]
+        )
+    )
+
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a routing agent.
+Decide which tool to use for a given question:
+- If the question is about Budget Speech 2024-2025, call `retrieval_tool`.
+- Otherwise, call `search_tool`.
+You must always use one of these tools, never answer directly yourself.
+"),
+    ("human", "{input}"),
+    ("system", "Available tools:\n{tools}\n\nRemember: use only {tool_names}."),
+    ("system", "Previous steps:\n{agent_scratchpad}")
+])
