@@ -9,9 +9,6 @@ from pydantic import SecretStr
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langfuse import Langfuse
 
-client = Langfuse()
-print(client)
-
 # Load environment variables from .env file
 load_dotenv()
 
@@ -58,18 +55,24 @@ if not api_key or not tavily_api_key or not langfuse_secret_key or not langfuse_
         raise ValueError("Google API Key is not set. Please set GOOGLE_API_KEY environment variable.")
     if not tavily_api_key:
         raise ValueError("Tavily API Key is not set. Please set TAVILY_API_KEY environment variable.")
+    if not langfuse_secret_key:
+        raise ValueError("Langfuse Secret Key is not set. Please set LANGFUSE_SECRET_KEY environment variable.")
+    if not langfuse_public_key:
+        raise ValueError("Langfuse Public Key is not set. Please set LANGFUSE_PUBLIC_KEY environment variable.")
+    if not langfuse_host:
+        raise ValueError("Langfuse Host is not set. Please set LANGFUSE_HOST environment variable.")
 
 
 
 langfuse = Langfuse(
-  secret_key="sk-lf-4e091f50-f7ac-4833-9478-6739c43b9818",
-  public_key="pk-lf-d4a90d9a-8541-4f52-8f21-faf596e27f95",
-  host="https://us.cloud.langfuse.com"
+  secret_key=langfuse_secret_key,
+  public_key=langfuse_public_key,
+  host=langfuse_host
 )
 
+gemini_model = "gemini-2.0-flash"
 
-
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=api_key, temperature=0.2, top_p=0.95)
+llm = ChatGoogleGenerativeAI(model=gemini_model, google_api_key=api_key, temperature=0.2, top_p=0.95)
 
 # Initialize the embedding model for ChromaDB
 embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=SecretStr(api_key))

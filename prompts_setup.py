@@ -1,8 +1,25 @@
+import os
+from dotenv import load_dotenv
 from langfuse import Langfuse
+from model import gemini_model
 
-langfuse = Langfuse()
+# Load environment variables from .env file
+load_dotenv()
 
-# ---------- Q&A Prompt ----------
+# Initialize Langfuse client
+langfuse_secret_key = os.getenv("LANGFUSE_SECRET_KEY", "")
+langfuse_public_key = os.getenv("LANGFUSE_PUBLIC_KEY", "")
+langfuse_host = os.getenv("LANGFUSE_HOST", "")
+
+if not langfuse_secret_key or not langfuse_public_key or not langfuse_host:
+    raise ValueError("Langfuse credentials are not set in the environment.")
+
+langfuse = Langfuse(
+  secret_key=langfuse_secret_key,
+  public_key=langfuse_public_key,
+  host=langfuse_host
+)
+
 langfuse.create_prompt(
     name="qa-contextual",
     type="text",
@@ -21,7 +38,7 @@ Question: {{question}}
 Answer:""",
     labels=["production", "qa"],
     config={
-        "model": "gpt-4o",
+        "model": gemini_model,
         "temperature": 0.2
     }
 )
@@ -30,15 +47,10 @@ Answer:""",
 langfuse.create_prompt(
     name="search-summarizer",
     type="text",
-    prompt="""Summarize the following results:
-
-{% for r in results %}
-{{ r.title }}: {{ r.content }}
-{% endfor %}
-""",
+    prompt="""Summarize the following results:{results_dict}""",
     labels=["production", "summarizer"],
     config={
-        "model": "gpt-4o-mini",
+        "model": gemini_model,
         "temperature": 0.3
     }
 )
@@ -50,19 +62,17 @@ langfuse.create_prompt(
     prompt=[
         {
             "role": "system",
-            "content": """You are a routing agent.
-Decide which tool to use for a given question:
-- If the question is about Budget Speech 2024-2025, call `retrieval_tool`.
-- Otherwise, call `search_tool`.
-You must always use one of these tools, never answer directly yourself."""
+            "content": """You are a routing agent. Your task is to decide which tool to use for a given question.
+- If the question is about Budget Speech 2024-2025, use the `retrieval_tool`.
+- Otherwise, use the `search_tool`.
+You must choose one of these tools.
+"""
         },
-        {"role": "human", "content": "{{input}}"},
-        {"role": "system", "content": "Available tools:\n{{tools}}\n\nRemember: use only {{tool_names}}."},
-        {"role": "system", "content": "Previous steps:\n{{agent_scratchpad}}"}
+        {"role": "human", "content": "{input}"}
     ],
     labels=["production", "router"],
     config={
-        "model": "gpt-4o",
+        "model": gemini_model,
         "temperature": 0.0
     }
 )
